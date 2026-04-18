@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodDash — Order Food Fast</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#00b14f;--green2:#009640;--green-light:#e8f8ee;
+  --orange:#ff6b35;--yellow:#ffd93d;
+  --bg:#f5f5f5;--white:#fff;--dark:#1a1a2e;--gray:#6b7280;--gray2:#e5e7eb;
+  --shadow:0 2px 16px rgba(0,0,0,0.10);--shadow-lg:0 8px 32px rgba(0,0,0,0.15);
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);overflow-x:hidden;}
+button{cursor:pointer;border:none;font-family:'Nunito',sans-serif;}
+.page{display:none;min-height:100vh;animation:fadeIn 0.4s ease;}
+.page.active{display:block;}
+#splash.active{display:flex;}
+#delivery-page.active{display:flex;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* ===== SPLASH ===== */
+#splash{
+  background:linear-gradient(135deg,#00b14f 0%,#009640 50%,#007a33 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;padding:2rem;position:relative;overflow:hidden;
+}
+.splash-circles{position:absolute;inset:0;pointer-events:none;}
+.splash-circles span{position:absolute;border-radius:50%;background:rgba(255,255,255,0.06);animation:float 6s ease-in-out infinite;}
+.splash-circles span:nth-child(1){width:300px;height:300px;top:-80px;right:-80px;}
+.splash-circles span:nth-child(2){width:200px;height:200px;bottom:-40px;left:-40px;animation-delay:2s;}
+.splash-circles span:nth-child(3){width:150px;height:150px;top:40%;left:10%;animation-delay:4s;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-20px);}}
+.splash-logo{font-size:5rem;margin-bottom:0.5rem;animation:popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275);}
+@keyframes popIn{from{transform:scale(0);}to{transform:scale(1);}}
+.splash-title{font-size:2.8rem;font-weight:900;color:#fff;margin-bottom:0.4rem;line-height:1.1;}
+.splash-title span{color:var(--yellow);}
+.splash-sub{font-size:1rem;color:rgba(255,255,255,0.85);margin-bottom:1.5rem;font-weight:600;}
+.splash-features{display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;justify-content:center;}
+.splash-feat{
+  background:rgba(255,255,255,0.15);border-radius:16px;padding:1rem 1.2rem;
+  color:#fff;font-weight:700;font-size:0.85rem;
+  display:flex;flex-direction:column;align-items:center;gap:0.4rem;
+  backdrop-filter:blur(10px);cursor:pointer;
+  transition:all 0.2s;border:2px solid rgba(255,255,255,0.2);
+}
+.splash-feat:hover{background:rgba(255,255,255,0.28);transform:translateY(-3px);}
+.splash-feat span{font-size:1.6rem;}
+.btn-start{
+  background:#fff;color:var(--green);font-size:1.15rem;font-weight:900;
+  padding:1rem 2.8rem;border-radius:50px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);transition:all 0.3s;
+}
+.btn-start:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.25);}
+
+/* MODALS */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;
+  display:none;align-items:center;justify-content:center;padding:1.5rem;
+}
+.modal-overlay.active{display:flex;}
+.modal{background:#fff;border-radius:24px;padding:2rem;max-width:360px;width:100%;text-align:center;box-shadow:var(--shadow-lg);}
+.modal-icon{font-size:3.5rem;margin-bottom:0.8rem;}
+.modal h3{font-size:1.2rem;font-weight:900;margin-bottom:0.4rem;}
+.modal p{color:var(--gray);font-size:0.88rem;line-height:1.6;margin-bottom:1.2rem;}
+.modal-list{text-align:left;margin-bottom:1.2rem;list-style:none;}
+.modal-list li{display:flex;align-items:center;gap:0.7rem;padding:0.5rem 0;font-size:0.88rem;font-weight:700;border-bottom:1px solid var(--gray2);}
+.modal-list li:last-child{border:none;}
+.modal-close{background:var(--green);color:#fff;padding:0.8rem 2rem;border-radius:50px;font-size:1rem;font-weight:800;width:100%;transition:all 0.2s;}
+.modal-close:hover{background:var(--green2);}
+.promo-code{background:var(--green-light);border:2px dashed var(--green);border-radius:12px;padding:1rem;margin:0.8rem 0;font-size:1.4rem;font-weight:900;color:var(--green);letter-spacing:0.1em;}
+.promo-details{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.2rem;}
+.promo-detail{background:var(--bg);border-radius:12px;padding:0.7rem;text-align:center;}
+.promo-detail div:first-child{font-size:1.4rem;margin-bottom:0.2rem;}
+.promo-detail div:last-child{font-size:0.72rem;font-weight:700;color:var(--gray);}
+
+/* NAV */
+.navbar{background:var(--white);position:sticky;top:0;z-index:100;padding:0.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+.nav-brand{display:flex;align-items:center;gap:0.5rem;font-size:1.4rem;font-weight:900;color:var(--green);}
+.nav-cart{background:var(--green);color:#fff;border-radius:50px;padding:0.6rem 1.2rem;font-weight:800;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;transition:all 0.2s;}
+.nav-cart:hover{background:var(--green2);}
+.cart-badge{background:#fff;color:var(--green);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:900;}
+
+/* HERO */
+.hero-banner{background:linear-gradient(135deg,#00b14f,#009640);padding:1.5rem;color:#fff;position:relative;overflow:hidden;}
+.hero-banner::after{content:'🍔';position:absolute;right:-10px;bottom:-10px;font-size:8rem;opacity:0.12;transform:rotate(-20deg);pointer-events:none;}
+.hero-location{display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;opacity:0.9;margin-bottom:0.4rem;}
+.hero-title{font-size:1.5rem;font-weight:900;margin-bottom:0.2rem;}
+.hero-sub{font-size:0.88rem;opacity:0.85;font-weight:600;margin-bottom:1rem;}
+
+/* SEARCH */
+.search-wrapper{position:relative;}
+.search-bar{display:flex;align-items:center;gap:0.5rem;background:#fff;border-radius:12px;padding:0.65rem 1rem;box-shadow:var(--shadow-lg);}
+.search-bar input{border:none;outline:none;flex:1;font-family:'Nunito',sans-serif;font-size:0.92rem;color:var(--dark);background:transparent;}
+.search-btn{background:var(--green);color:#fff;border-radius:8px;padding:0.4rem 1rem;font-weight:800;font-size:0.82rem;transition:all 0.2s;white-space:nowrap;}
+.search-btn:hover{background:var(--green2);}
+.search-results{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:300;
+  background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);
+  max-height:300px;overflow-y:auto;display:none;
+}
+.search-results.show{display:block;}
+.search-result-item{display:flex;align-items:center;gap:0.8rem;padding:0.85rem 1rem;border-bottom:1px solid var(--gray2);cursor:pointer;transition:background 0.15s;}
+.search-result-item:hover{background:var(--green-light);}
+.search-result-item:last-child{border:none;}
+.sri-icon{font-size:1.4rem;width:40px;height:40px;background:var(--green-light);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sri-name{font-weight:800;font-size:0.88rem;color:var(--dark);}
+.sri-meta{font-size:0.75rem;color:var(--gray);font-weight:600;}
+.search-no-result{padding:1.5rem;text-align:center;color:var(--gray);font-weight:700;font-size:0.9rem;}
+
+/* CATEGORIES */
+.section{padding:1.2rem 1.5rem;}
+.section-title{font-size:1.05rem;font-weight:800;margin-bottom:0.9rem;color:var(--dark);}
+.cats{display:flex;gap:0.8rem;overflow-x:auto;padding-bottom:0.4rem;scrollbar-width:none;}
+.cats::-webkit-scrollbar{display:none;}
+.cat{display:flex;flex-direction:column;align-items:center;gap:0.4rem;min-width:68px;cursor:pointer;}
+.cat-icon{width:60px;height:60px;border-radius:14px;background:var(--white);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all 0.2s;border:2px solid transparent;}
+.cat.active .cat-icon,.cat:hover .cat-icon{border-color:var(--green);background:var(--green-light);transform:translateY(-3px);}
+.cat-name{font-size:0.7rem;font-weight:700;color:var(--gray);text-align:center;}
+.cat.active .cat-name{color:var(--green);}
+
+/* PROMO BANNER */
+.promo-banner{margin:0 1.5rem 1.2rem;border-radius:16px;background:linear-gradient(120deg,#ff6b35,#ff8c42);padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);cursor:pointer;transition:all 0.2s;}
+.promo-banner:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.promo-text h3{color:#fff;font-size:1rem;font-weight:900;}
+.promo-text p{color:rgba(255,255,255,0.9);font-size:0.75rem;font-weight:600;}
+.promo-tag{background:#fff;color:var(--orange);padding:0.35rem 0.9rem;border-radius:50px;font-weight:900;font-size:0.82rem;white-space:nowrap;}
+.promo-emoji{font-size:2rem;}
+
+/* RESTAURANT LIST PAGE */
+#restaurants-page.active{display:block;}
+.rest-header{background:var(--white);padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:var(--shadow);position:sticky;top:0;z-index:10;}
+.rest-header h2{font-size:1.15rem;font-weight:900;}
+.rest-grid{padding:1.2rem 1.5rem;display:flex;flex-direction:column;gap:1rem;}
+.rest-card{background:var(--white);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:all 0.25s;display:flex;align-items:stretch;}
+.rest-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.rest-img{width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
+.rest-info{padding:1rem;flex:1;}
+.rest-name{font-size:1rem;font-weight:900;margin-bottom:0.25rem;}
+.rest-cats{font-size:0.75rem;color:var(--gray);font-weight:600;margin-bottom:0.5rem;}
+.rest-meta{display:flex;gap:1rem;flex-wrap:wrap;}
+.rest-badge{display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;font-weight:700;}
+.rest-badge.green{color:var(--green);}
+.rest-badge.orange{color:var(--orange);}
+.rest-open{display:inline-block;background:var(--green-light);color:var(--green);font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:50px;margin-top:0.4rem;}
+
+/* FOOD GRID */
+.food-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+@media(min-width:580px){.food-grid{grid-template-columns:repeat(3,1fr);}}
+.food-card{background:var(--white);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);transition:all 0.25s;}
+.food-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.food-img{width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:3.2rem;background:linear-gradient(135deg,#f8f9fa,#e9ecef);position:relative;}
+.food-badge-tag{position:absolute;top:7px;left:7px;background:var(--green);color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:50px;}
+.food-info{padding:0.75rem;}
+.food-name{font-size:0.9rem;font-weight:800;margin-bottom:0.2rem;}
+.food-desc{font-size:0.7rem;color:var(--gray);margin-bottom:0.5rem;line-height:1.4;}
+.food-bottom{display:flex;align-items:center;justify-content:space-between;}
+.food-price{font-size:0.95rem;font-weight:900;color:var(--green);}
+.food-rating{font-size:0.72rem;color:var(--gray);font-weight:700;}
+.btn-add{background:var(--green);color:#fff;border-radius:50px;padding:0.32rem 0.85rem;font-size:0.78rem;font-weight:800;transition:all 0.2s;margin-top:0.5rem;width:100%;}
+.btn-add:hover{background:var(--green2);}
+.no-results{text-align:center;padding:3rem 1rem;color:var(--gray);}
+.no-results div{font-size:3rem;margin-bottom:0.8rem;}
+.no-results p{font-weight:700;}
+
+/* CART */
+.cart-header{background:var(--white);padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:var(--shadow);position:sticky;top:0;z-index:10;}
+.cart-header h2{font-size:1.15rem;font-weight:900;}
+.back-btn{background:var(--gray2);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.2s;flex-shrink:0;}
+.back-btn:hover{background:var(--green-light);}
+.cart-items{padding:1rem 1.5rem;}
+.cart-item{background:var(--white);border-radius:16px;padding:0.9rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.9rem;box-shadow:var(--shadow);}
+.cart-item-emoji{font-size:2.2rem;width:52px;height:52px;background:var(--green-light);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cart-item-info{flex:1;min-width:0;}
+.cart-item-name{font-weight:800;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cart-item-price{color:var(--green);font-weight:700;font-size:0.85rem;}
+.qty-controls{display:flex;align-items:center;gap:0.4rem;flex-shrink:0;}
+.qty-btn{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.qty-btn:hover{background:var(--green2);}
+.qty-num{font-weight:800;font-size:0.9rem;min-width:18px;text-align:center;}
+.payment-section{padding:0 1.5rem 1rem;}
+.payment-title{font-weight:900;font-size:0.95rem;margin-bottom:0.7rem;}
+.payment-methods{display:flex;flex-direction:column;gap:0.55rem;}
+.payment-method{background:var(--white);border-radius:12px;padding:0.85rem;display:flex;align-items:center;gap:0.8rem;box-shadow:var(--shadow);cursor:pointer;border:2px solid transparent;transition:all 0.2s;}
+.payment-method.selected{border-color:var(--green);background:var(--green-light);}
+.payment-method-info{flex:1;}
+.payment-method-name{font-weight:800;font-size:0.88rem;}
+.payment-method-desc{font-size:0.72rem;color:var(--gray);}
+.payment-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.payment-method.selected .payment-radio{border-color:var(--green);}
+.payment-method.selected .payment-radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--green);}
+.order-summary{background:var(--white);margin:0 1.5rem;border-radius:16px;padding:1.1rem;box-shadow:var(--shadow);margin-bottom:1rem;}
+.summary-row{display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:0.45rem;color:var(--gray);}
+.summary-row.total{font-weight:900;color:var(--dark);font-size:0.95rem;border-top:1px solid var(--gray2);padding-top:0.5rem;margin-top:0.3rem;}
+.btn-order{display:block;width:calc(100% - 3rem);margin:0 auto 2rem;background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;font-size:1.05rem;font-weight:900;padding:0.95rem;border-radius:16px;text-align:center;box-shadow:0 4px 20px rgba(0,177,79,0.4);transition:all 0.3s;}
+.btn-order:hover{transform:translateY(-2px);}
+.empty-cart{text-align:center;padding:3.5rem 2rem;}
+.empty-cart div{font-size:3.5rem;margin-bottom:0.8rem;}
+.empty-cart h3{font-weight:900;margin-bottom:0.4rem;}
+.empty-cart p{color:var(--gray);font-size:0.88rem;}
+
+/* DELIVERY */
+#delivery-page{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--white);padding:2rem;text-align:center;}
+.delivery-anim{font-size:5rem;animation:drive 1s linear infinite;}
+@keyframes drive{0%{transform:translateX(-20px);}50%{transform:translateX(20px);}100%{transform:translateX(-20px);}}
+.road{width:100%;max-width:320px;height:4px;background:repeating-linear-gradient(90deg,var(--green) 0,var(--green) 20px,transparent 20px,transparent 40px);margin:1rem auto;border-radius:4px;animation:road 0.5s linear infinite;}
+@keyframes road{from{background-position:0;}to{background-position:40px;}}
+.delivery-title{font-size:1.5rem;font-weight:900;color:var(--green);margin-top:1.5rem;}
+.delivery-sub{color:var(--gray);font-size:0.88rem;font-weight:600;margin-top:0.4rem;}
+.delivery-steps{margin:1.5rem 0;width:100%;max-width:300px;}
+.d-step{display:flex;align-items:center;gap:1rem;padding:0.75rem;border-radius:12px;margin-bottom:0.5rem;background:var(--bg);text-align:left;transition:all 0.3s;}
+.d-step.done{background:var(--green-light);}
+.d-step-icon{font-size:1.3rem;}
+.d-step-text{font-size:0.85rem;font-weight:700;}
+.d-step.done .d-step-text{color:var(--green);}
+.btn-back-home{background:var(--green);color:#fff;padding:0.85rem 2.5rem;border-radius:50px;font-size:1rem;font-weight:800;margin-top:1rem;transition:all 0.2s;}
+.btn-back-home:hover{background:var(--green2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--dark);color:#fff;padding:0.75rem 1.4rem;border-radius:50px;font-weight:700;font-size:0.88rem;transition:all 0.3s;z-index:9999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div class="page active" id="splash">
+  <div class="splash-circles"><span></span><span></span><span></span></div>
+  <div class="splash-logo">🍔</div>
+  <h1 class="splash-title">Food<span>Dash</span></h1>
+  <p class="splash-sub">Delicious food, delivered fast 🚀</p>
+  <div class="splash-features">
+    <div class="splash-feat" onclick="showInfoModal('delivery')"><span>⚡</span>Fast Delivery</div>
+    <div class="splash-feat" onclick="showInfoModal('foods')"><span>🍱</span>100+ Foods</div>
+    <div class="splash-feat" onclick="showInfoModal('payment')"><span>💳</span>Easy Payment</div>
+  </div>
+  <button class="btn-start" onclick="goToRestaurants()">Order Now →</button>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-delivery" onclick="if(event.target===this)closeModal('modal-delivery')">
+  <div class="modal">
+    <div class="modal-icon">⚡</div>
+    <h3>Fast Delivery</h3>
+    <p>We guarantee the fastest food delivery in Klang, Selangor. Hot food at your door!</p>
+    <ul class="modal-list">
+      <li>🕐 Average 25–35 minute delivery</li>
+      <li>📍 Real-time rider tracking</li>
+      <li>🔔 Live order status updates</li>
+      <li>🌧️ Delivery in all conditions</li>
+    </ul>
+    <button class="modal-close" onclick="closeModal('modal-delivery');goToRestaurants()">Let's Order! 🚀</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-foods" onclick="if(event.target===this)closeModal('modal-foods')">
+  <div class="modal">
+    <div class="modal-icon">🍱</div>
+    <h3>100+ Foods Available</h3>
+    <p>Explore a huge variety of cuisines from the best local restaurants near you!</p>
+    <ul class="modal-list">
+      <li>🍔 Burgers & Western</li>
+      <li>🍕 Pizza & Italian</li>
+      <li>🍗 Chicken & Grilled</li>
+      <li>🍱 Rice & Local Malay Food</li>
+      <li>🧋 Drinks & Beverages</li>
+      <li>🍦 Desserts & Sweets</li>
+    </ul>
+    <button class="modal-close" onclick="closeModal('modal-foods');goToRestaurants()">Explore Menu 🍽️</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-payment" onclick="if(event.target===this)closeModal('modal-payment')">
+  <div class="modal">
+    <div class="modal-icon">💳</div>
+    <h3>Easy Payment</h3>
+    <p>Multiple secure payment options for your convenience!</p>
+    <ul class="modal-list">
+      <li>💵 Cash on Delivery</li>
+      <li>📱 Touch 'n Go eWallet</li>
+      <li>🏦 Online Banking (FPX)</li>
+      <li>💳 Credit / Debit Card</li>
+    </ul>
+    <button class="modal-close" onclick="closeModal('modal-payment')">Sounds Great! ✅</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-promo" onclick="if(event.target===this)closeModal('modal-promo')">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h3>Special Promo Today!</h3>
+    <p>Use this code at checkout to get 50% off your order!</p>
+    <div class="promo-code">FOODDASH50</div>
+    <div class="promo-details">
+      <div class="promo-detail"><div>50%</div><div>Discount</div></div>
+      <div class="promo-detail"><div>📅</div><div>Today Only</div></div>
+      <div class="promo-detail"><div>🛒</div><div>Min. RM 15</div></div>
+      <div class="promo-detail"><div>♾️</div><div>All Items</div></div>
+    </div>
+    <button class="modal-close" onclick="closeModal('modal-promo');applyPromo()">Apply Promo! 🎁</button>
+  </div>
+</div>
+
+<!-- ===== RESTAURANTS PAGE ===== -->
+<div class="page" id="restaurants-page">
+  <div class="rest-header">
+    <button class="back-btn" onclick="showPage('splash')">←</button>
+    <h2>🏪 Restaurants Near You</h2>
+  </div>
+  <div class="rest-grid" id="rest-grid"></div>
+</div>
+
+<!-- ===== MAIN MENU PAGE ===== -->
+<div class="page" id="app">
+  <nav class="navbar">
+    <div class="nav-brand">🍔 <span id="current-restaurant-name">FoodDash</span></div>
+    <button class="nav-cart" onclick="showPage('cart-page')">
+      🛒 Cart <div class="cart-badge" id="cart-count">0</div>
+    </button>
+  </nav>
+
+  <div class="hero-banner">
+    <div class="hero-location">📍 Klang, Selangor</div>
+    <div class="hero-title" id="hero-title">What are you craving? 😋</div>
+    <div class="hero-sub">Order from top restaurants near you</div>
+    <div class="search-wrapper">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Search food, e.g. burger, chicken, pizza..." oninput="doSearch(this.value)">
+        <button class="search-btn" onclick="doSearch(document.getElementById('search-input').value)">Search</button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Categories</div>
+    <div class="cats">
+      <div class="cat active" onclick="filterCat(this,'all')"><div class="cat-icon">🍽️</div><div class="cat-name">All</div></div>
+      <div class="cat" onclick="filterCat(this,'burger')"><div class="cat-icon">🍔</div><div class="cat-name">Burger</div></div>
+      <div class="cat" onclick="filterCat(this,'pizza')"><div class="cat-icon">🍕</div><div class="cat-name">Pizza</div></div>
+      <div class="cat" onclick="filterCat(this,'chicken')"><div class="cat-icon">🍗</div><div class="cat-name">Chicken</div></div>
+      <div class="cat" onclick="filterCat(this,'rice')"><div class="cat-icon">🍱</div><div class="cat-name">Rice</div></div>
+      <div class="cat" onclick="filterCat(this,'drinks')"><div class="cat-icon">🧋</div><div class="cat-name">Drinks</div></div>
+      <div class="cat" onclick="filterCat(this,'dessert')"><div class="cat-icon">🍦</div><div class="cat-name">Dessert</div></div>
+    </div>
+  </div>
+
+  <div class="promo-banner" onclick="showInfoModal('promo')">
+    <div class="promo-text"><h3>50% OFF Today! 🎉</h3><p>Click to get your promo code</p></div>
+    <div class="promo-emoji">🎁</div>
+    <div class="promo-tag">GRAB NOW</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title" id="food-section-title">Popular Items 🔥</div>
+    <div class="food-grid" id="food-grid"></div>
+  </div>
+</div>
+
+<!-- ===== CART PAGE ===== -->
+<div class="page" id="cart-page">
+  <div class="cart-header">
+    <button class="back-btn" onclick="showPage('app')">←</button>
+    <h2>🛒 My Cart</h2>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="payment-section">
+    <div class="payment-title">💳 Payment Method</div>
+    <div class="payment-methods">
+      <div class="payment-method selected" onclick="selectPayment(this)">
+        <span>💵</span>
+        <div class="payment-method-info"><div class="payment-method-name">Cash on Delivery</div><div class="payment-method-desc">Pay when food arrives</div></div>
+        <div class="payment-radio"></div>
+      </div>
+      <div class="payment-method" onclick="selectPayment(this)">
+        <span>📱</span>
+        <div class="payment-method-info"><div class="payment-method-name">Touch 'n Go eWallet</div><div class="payment-method-desc">Quick & secure payment</div></div>
+        <div class="payment-radio"></div>
+      </div>
+      <div class="payment-method" onclick="selectPayment(this)">
+        <span>🏦</span>
+        <div class="payment-method-info"><div class="payment-method-name">Online Banking (FPX)</div><div class="payment-method-desc">Transfer from your bank</div></div>
+        <div class="payment-radio"></div>
+      </div>
+      <div class="payment-method" onclick="selectPayment(this)">
+        <span>💳</span>
+        <div class="payment-method-info"><div class="payment-method-name">Credit / Debit Card</div><div class="payment-method-desc">Visa, Mastercard accepted</div></div>
+        <div class="payment-radio"></div>
+      </div>
+    </div>
+  </div>
+  <div class="order-summary" id="order-summary"></div>
+  <button class="btn-order" onclick="placeOrder()">🚀 Place Order</button>
+</div>
+
+<!-- ===== DELIVERY PAGE ===== -->
+<div class="page" id="delivery-page">
+  <div class="delivery-anim">🛵</div>
+  <div class="road"></div>
+  <div class="delivery-title">Order Confirmed! 🎉</div>
+  <div class="delivery-sub">Your food is on the way to Klang!</div>
+  <div class="delivery-steps">
+    <div class="d-step done"><div class="d-step-icon">✅</div><div class="d-step-text">Order Confirmed</div></div>
+    <div class="d-step done"><div class="d-step-icon">👨‍🍳</div><div class="d-step-text">Restaurant Preparing</div></div>
+    <div class="d-step" id="step3"><div class="d-step-icon">🛵</div><div class="d-step-text">Rider Picking Up</div></div>
+    <div class="d-step" id="step4"><div class="d-step-icon">📍</div><div class="d-step-text">On the Way to You</div></div>
+  </div>
+  <button class="btn-back-home" onclick="backHome()">Back to Home 🏠</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+const restaurants = [
+  {id:1, name:"McDonald's Klang", emoji:"🍔", cats:"Burger • Fast Food • Western", rating:4.7, time:"20-30", minOrder:10, open:true},
+  {id:2, name:"Pizza Hut Klang", emoji:"🍕", cats:"Pizza • Italian • Western", rating:4.5, time:"25-35", minOrder:15, open:true},
+  {id:3, name:"KFC Klang", emoji:"🍗", cats:"Chicken • Fast Food • Fried", rating:4.6, time:"20-25", minOrder:10, open:true},
+  {id:4, name:"Nasi Lemak Ujang", emoji:"🍱", cats:"Rice • Malay • Local", rating:4.9, time:"15-25", minOrder:8, open:true},
+  {id:5, name:"Bubble Tea Station", emoji:"🧋", cats:"Drinks • Bubble Tea • Dessert", rating:4.4, time:"10-20", minOrder:5, open:true},
+  {id:6, name:"Sweet Treats Bakery", emoji:"🍦", cats:"Dessert • Cake • Ice Cream", rating:4.3, time:"20-30", minOrder:10, open:false},
+];
+
+// Each restaurant has its own menu
+const restaurantMenus = {
+  1: [ // McDonald's Klang
+    {id:101,name:"Big Mac",desc:"Double beef patty, special sauce, lettuce, cheese, pickles & onions",price:14,emoji:"🍔",cat:"burger",badge:"Best Seller",rating:4.9,reviews:512},
+    {id:102,name:"McChicken Burger",desc:"Crispy chicken fillet with mayo & fresh lettuce",price:11,emoji:"🍔",cat:"burger",badge:"",rating:4.7,reviews:341},
+    {id:103,name:"Double Cheeseburger",desc:"Two beef patties with extra melted cheese",price:12,emoji:"🍔",cat:"burger",badge:"Popular",rating:4.8,reviews:289},
+    {id:104,name:"Filet-O-Fish",desc:"Fish fillet with tartar sauce & cheese on a soft bun",price:10,emoji:"🍔",cat:"burger",badge:"",rating:4.5,reviews:178},
+    {id:105,name:"McSpicy",desc:"Extra crispy spicy chicken fillet with hot sauce",price:13,emoji:"🌶️",cat:"burger",badge:"Spicy 🌶️",rating:4.8,reviews:423},
+    {id:106,name:"Large French Fries",desc:"Golden crispy fries, lightly salted & freshly made",price:6,emoji:"🍟",cat:"sides",badge:"",rating:4.7,reviews:620},
+    {id:107,name:"McNuggets 9pcs",desc:"Crispy chicken nuggets with your choice of sauce",price:9,emoji:"🍗",cat:"sides",badge:"Fan Fav",rating:4.9,reviews:710},
+    {id:108,name:"Coca-Cola Large",desc:"Ice cold Coke, perfectly refreshing",price:4,emoji:"🥤",cat:"drinks",badge:"",rating:4.6,reviews:480},
+    {id:109,name:"McFlurry Oreo",desc:"Creamy vanilla soft serve blended with Oreo pieces",price:7,emoji:"🍦",cat:"dessert",badge:"New",rating:4.8,reviews:310},
+    {id:110,name:"Apple Pie",desc:"Warm flaky pastry filled with sweet cinnamon apple",price:4,emoji:"🥧",cat:"dessert",badge:"",rating:4.5,reviews:220},
+  ],
+  2: [ // Pizza Hut Klang
+    {id:201,name:"Pepperoni Lover's",desc:"Loaded with double pepperoni on rich tomato sauce",price:28,emoji:"🍕",cat:"pizza",badge:"Best Seller",rating:4.9,reviews:389},
+    {id:202,name:"Hawaiian Chicken",desc:"Chicken, pineapple & cheese on golden crust",price:26,emoji:"🍕",cat:"pizza",badge:"Popular",rating:4.7,reviews:245},
+    {id:203,name:"BBQ Meat Feast",desc:"Smoky BBQ base with chicken, beef & turkey ham",price:30,emoji:"🍕",cat:"pizza",badge:"",rating:4.8,reviews:302},
+    {id:204,name:"Veggie Supreme",desc:"Bell peppers, mushrooms, olives & onions on tomato sauce",price:24,emoji:"🍕",cat:"pizza",badge:"Veggie",rating:4.5,reviews:134},
+    {id:205,name:"Cheesy 7",desc:"Seven types of cheese on a thick buttery crust",price:32,emoji:"🍕",cat:"pizza",badge:"Fan Fav",rating:4.9,reviews:411},
+    {id:206,name:"Super Supreme",desc:"The works — pepperoni, chicken, mushroom, peppers & more",price:31,emoji:"🍕",cat:"pizza",badge:"",rating:4.8,reviews:276},
+    {id:207,name:"Garlic Bread",desc:"Toasted bread with garlic butter & herbs",price:8,emoji:"🍞",cat:"sides",badge:"",rating:4.6,reviews:198},
+    {id:208,name:"Chicken Wings 6pcs",desc:"Juicy wings with smoky BBQ glaze",price:14,emoji:"🍗",cat:"sides",badge:"",rating:4.7,reviews:221},
+    {id:209,name:"Pepsi Large",desc:"Chilled Pepsi to go with your pizza",price:5,emoji:"🥤",cat:"drinks",badge:"",rating:4.4,reviews:180},
+    {id:210,name:"Lychee Fizz",desc:"Refreshing lychee sparkling drink",price:6,emoji:"🍹",cat:"drinks",badge:"New",rating:4.5,reviews:95},
+  ],
+  3: [ // KFC Klang
+    {id:301,name:"Original Recipe Chicken",desc:"KFC's iconic 11 herbs & spices crispy fried chicken",price:9,emoji:"🍗",cat:"chicken",badge:"Best Seller",rating:4.9,reviews:890},
+    {id:302,name:"Hot & Crispy Chicken",desc:"Extra crunchy coating with bold spicy seasoning",price:9,emoji:"🍗",cat:"chicken",badge:"Spicy 🌶️",rating:4.8,reviews:654},
+    {id:303,name:"Zinger Burger",desc:"Fiery crispy chicken fillet with spicy mayo",price:13,emoji:"🍔",cat:"burger",badge:"Popular",rating:4.8,reviews:521},
+    {id:304,name:"Double Down",desc:"Two crispy fillets replacing the bun, with cheese & sauce",price:15,emoji:"🍔",cat:"burger",badge:"Fan Fav",rating:4.7,reviews:312},
+    {id:305,name:"Chicken Burger",desc:"Classic crispy chicken fillet with lettuce & mayo",price:11,emoji:"🍔",cat:"burger",badge:"",rating:4.6,reviews:289},
+    {id:306,name:"Large Whipped Potato",desc:"Creamy mashed potatoes with rich chicken gravy",price:6,emoji:"🥔",cat:"sides",badge:"",rating:4.8,reviews:445},
+    {id:307,name:"Coleslaw",desc:"Fresh crunchy coleslaw with creamy dressing",price:4,emoji:"🥗",cat:"sides",badge:"",rating:4.5,reviews:310},
+    {id:308,name:"Fries Large",desc:"Crispy golden fries with KFC seasoning",price:6,emoji:"🍟",cat:"sides",badge:"",rating:4.7,reviews:520},
+    {id:309,name:"Pepsi Large",desc:"Ice cold Pepsi to go with your chicken",price:4,emoji:"🥤",cat:"drinks",badge:"",rating:4.5,reviews:380},
+    {id:310,name:"Chocolate Sundae",desc:"Smooth chocolate sauce over creamy soft serve",price:5,emoji:"🍦",cat:"dessert",badge:"",rating:4.6,reviews:210},
+  ],
+  4: [ // Nasi Lemak Ujang
+    {id:401,name:"Nasi Lemak Special",desc:"Fragrant coconut rice with sambal, egg, ikan bilis & peanuts",price:10,emoji:"🍱",cat:"rice",badge:"Best Seller",rating:4.9,reviews:612},
+    {id:402,name:"Nasi Lemak Ayam Goreng",desc:"Coconut rice with crispy fried chicken & spicy sambal",price:13,emoji:"🍱",cat:"rice",badge:"Popular",rating:4.8,reviews:489},
+    {id:403,name:"Nasi Lemak Sotong",desc:"Coconut rice with spicy sambal squid",price:12,emoji:"🍱",cat:"rice",badge:"",rating:4.7,reviews:321},
+    {id:404,name:"Nasi Lemak Rendang",desc:"Coconut rice with slow-cooked dry beef rendang",price:14,emoji:"🍱",cat:"rice",badge:"Fan Fav",rating:4.9,reviews:401},
+    {id:405,name:"Ayam Goreng Berempah",desc:"Malay-style crispy fried chicken with aromatic herbs & spices",price:9,emoji:"🍗",cat:"chicken",badge:"",rating:4.8,reviews:278},
+    {id:406,name:"Sambal Sotong",desc:"Tender squid cooked in rich spicy sambal sauce",price:11,emoji:"🦑",cat:"sides",badge:"Spicy 🌶️",rating:4.7,reviews:198},
+    {id:407,name:"Telur Dadar",desc:"Malaysian fluffy omelette with onion & chili",price:4,emoji:"🍳",cat:"sides",badge:"",rating:4.5,reviews:145},
+    {id:408,name:"Teh Tarik",desc:"Classic Malaysian pulled milk tea, hot & frothy",price:4,emoji:"🧋",cat:"drinks",badge:"",rating:4.9,reviews:710},
+    {id:409,name:"Air Bandung",desc:"Sweet rose-flavoured milk drink, chilled & refreshing",price:4,emoji:"🥛",cat:"drinks",badge:"",rating:4.6,reviews:290},
+    {id:410,name:"Cendol",desc:"Pandan jelly noodles with coconut milk, red beans & gula melaka",price:6,emoji:"🍧",cat:"dessert",badge:"Local Fav",rating:4.9,reviews:380},
+  ],
+  5: [ // Bubble Tea Station
+    {id:501,name:"Brown Sugar Boba",desc:"Fresh milk with brown sugar syrup & chewy tapioca pearls",price:9,emoji:"🧋",cat:"drinks",badge:"Best Seller",rating:4.9,reviews:540},
+    {id:502,name:"Taro Milk Tea",desc:"Creamy taro milk tea with boba pearls",price:9,emoji:"🧋",cat:"drinks",badge:"Popular",rating:4.8,reviews:412},
+    {id:503,name:"Matcha Latte",desc:"Premium Japanese matcha with steamed milk",price:10,emoji:"🍵",cat:"drinks",badge:"",rating:4.7,reviews:289},
+    {id:504,name:"Strawberry Yakult",desc:"Sweet strawberry blended with tangy Yakult",price:8,emoji:"🍓",cat:"drinks",badge:"",rating:4.8,reviews:345},
+    {id:505,name:"Mango Sago",desc:"Fresh mango with coconut milk & chewy sago pearls",price:10,emoji:"🥭",cat:"drinks",badge:"Fan Fav",rating:4.9,reviews:390},
+    {id:506,name:"Lychee Jelly Tea",desc:"Light lychee tea with coconut jelly pieces",price:8,emoji:"🍹",cat:"drinks",badge:"",rating:4.6,reviews:210},
+    {id:507,name:"Cheese Foam Tea",desc:"Smooth cream cheese foam on top of premium black tea",price:11,emoji:"🧋",cat:"drinks",badge:"New",rating:4.7,reviews:178},
+    {id:508,name:"Waffle",desc:"Crispy golden waffle with butter & maple syrup",price:8,emoji:"🧇",cat:"dessert",badge:"",rating:4.6,reviews:234},
+    {id:509,name:"Mochi Ice Cream",desc:"Soft rice cake filled with creamy ice cream, 3 flavours",price:9,emoji:"🍡",cat:"dessert",badge:"",rating:4.7,reviews:198},
+  ],
+  6: [ // Sweet Treats Bakery
+    {id:601,name:"Chocolate Lava Cake",desc:"Warm rich chocolate cake with gooey molten centre",price:12,emoji:"🎂",cat:"dessert",badge:"Best Seller",rating:4.9,reviews:420},
+    {id:602,name:"Strawberry Cheesecake",desc:"Creamy New York cheesecake with fresh strawberry topping",price:14,emoji:"🍰",cat:"dessert",badge:"Popular",rating:4.8,reviews:380},
+    {id:603,name:"Tiramisu",desc:"Classic Italian dessert with mascarpone & espresso",price:13,emoji:"🍮",cat:"dessert",badge:"Fan Fav",rating:4.8,reviews:310},
+    {id:604,name:"Creme Brulee",desc:"Silky vanilla custard with caramelised sugar crust",price:12,emoji:"🍯",cat:"dessert",badge:"",rating:4.7,reviews:245},
+    {id:605,name:"Macaron Box (6pcs)",desc:"Assorted French macarons — rose, pistachio, chocolate & more",price:18,emoji:"🍬",cat:"dessert",badge:"",rating:4.6,reviews:189},
+    {id:606,name:"Ice Cream Sundae",desc:"Vanilla soft serve with chocolate fudge, nuts & cherry",price:9,emoji:"🍦",cat:"dessert",badge:"",rating:4.5,reviews:276},
+    {id:607,name:"Croissant",desc:"Buttery flaky croissant, freshly baked daily",price:6,emoji:"🥐",cat:"bakery",badge:"",rating:4.7,reviews:310},
+    {id:608,name:"Cinnamon Roll",desc:"Soft warm roll with cinnamon sugar & cream cheese glaze",price:7,emoji:"🌀",cat:"bakery",badge:"New",rating:4.8,reviews:198},
+    {id:609,name:"Coffee Latte",desc:"Smooth espresso with steamed milk & latte art",price:8,emoji:"☕",cat:"drinks",badge:"",rating:4.7,reviews:340},
+    {id:610,name:"Hot Chocolate",desc:"Rich velvety hot chocolate with marshmallows",price:8,emoji:"🍫",cat:"drinks",badge:"",rating:4.8,reviews:290},
+  ],
+};
+
+// Current restaurant's menu (dynamic)
+let currentFoods = [];
+
+let cart = {};
+let currentCat = 'all';
+let promoApplied = false;
+let currentRestaurant = null;
+
+// ===== RESTAURANTS =====
+function renderRestaurants(list){
+  const grid = document.getElementById('rest-grid');
+  if(!list.length){
+    grid.innerHTML = '<div class="no-results"><div>😕</div><p>No restaurants found!</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(r=>`
+    <div class="rest-card" onclick="openRestaurant(${r.id})">
+      <div class="rest-img">${r.emoji}</div>
+      <div class="rest-info">
+        <div class="rest-name">${r.name}</div>
+        <div class="rest-cats">${r.cats}</div>
+        <div class="rest-meta">
+          <div class="rest-badge green">⭐ ${r.rating}</div>
+          <div class="rest-badge orange">🕐 ${r.time} min</div>
+          <div class="rest-badge">🛒 Min. RM${r.minOrder}</div>
+        </div>
+        <span class="rest-open">${r.open ? '🟢 Open Now' : '🔴 Closed'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openRestaurant(id){
+  currentRestaurant = restaurants.find(r=>r.id===id);
+  if(!currentRestaurant) return;
+  if(!currentRestaurant.open){ showToast('Sorry, this restaurant is currently closed 🔴'); return; }
+  currentFoods = restaurantMenus[id] || [];
+  document.getElementById('current-restaurant-name').textContent = currentRestaurant.name;
+  document.getElementById('hero-title').textContent = currentRestaurant.name;
+  currentCat = 'all';
+  document.querySelectorAll('.cat').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.cat').classList.add('active');
+  renderFoods(currentFoods, 'Menu 🍽️');
+  showPage('app');
+}
+
+function goToRestaurants(){
+  renderRestaurants(restaurants);
+  showPage('restaurants-page');
+}
+
+// ===== SEARCH (searches both restaurants and food) =====
+function doSearch(val){
+  const q = val.trim().toLowerCase();
+  const resultsEl = document.getElementById('search-results');
+
+  if(!q){ resultsEl.classList.remove('show'); renderFoods(currentFoods, 'Menu 🍽️'); return; }
+
+  // Search foods within current restaurant only
+  const foodMatches = currentFoods.filter(f=>
+    f.name.toLowerCase().includes(q) ||
+    f.cat.toLowerCase().includes(q) ||
+    f.desc.toLowerCase().includes(q)
+  );
+
+  // Search restaurants by name or category
+  const restMatches = restaurants.filter(r=>
+    r.name.toLowerCase().includes(q) ||
+    r.cats.toLowerCase().includes(q)
+  );
+
+  let html = '';
+
+  if(restMatches.length){
+    html += `<div style="padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:var(--gray);background:var(--bg);">🏪 RESTAURANTS</div>`;
+    html += restMatches.map(r=>`
+      <div class="search-result-item" onclick="closeSearchAndGo(${r.id})">
+        <div class="sri-icon">${r.emoji}</div>
+        <div>
+          <div class="sri-name">${r.name}</div>
+          <div class="sri-meta">⭐ ${r.rating} • 🕐 ${r.time} min</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if(foodMatches.length){
+    html += `<div style="padding:0.5rem 1rem;font-size:0.75rem;font-weight:800;color:var(--gray);background:var(--bg);">🍽️ MENU ITEMS</div>`;
+    html += foodMatches.map(f=>`
+      <div class="search-result-item" onclick="selectFood(${f.id})">
+        <div class="sri-icon">${f.emoji}</div>
+        <div>
+          <div class="sri-name">${f.name}</div>
+          <div class="sri-meta">RM ${f.price} • ⭐ ${f.rating}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if(!html){
+    resultsEl.innerHTML = `<div class="search-no-result">😕 No results for "<b>${val}</b>"</div>`;
+  } else {
+    resultsEl.innerHTML = html;
+  }
+
+  resultsEl.classList.add('show');
+  if(foodMatches.length) renderFoods(foodMatches, `Results for "${val}" 🔍`);
+  else if(!restMatches.length) renderFoods([], `Results for "${val}" 🔍`);
+}
+
+function closeSearchAndGo(restId){
+  document.getElementById('search-results').classList.remove('show');
+  document.getElementById('search-input').value = '';
+  openRestaurant(restId);
+}
+
+function selectFood(id){
+  const food = currentFoods.find(f=>f.id===id);
+  if(!food) return;
+  document.getElementById('search-results').classList.remove('show');
+  document.getElementById('search-input').value = food.name;
+  renderFoods([food], `Showing: ${food.name}`);
+}
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-wrapper'))
+    document.getElementById('search-results').classList.remove('show');
+});
+
+// ===== FOOD =====
+function renderFoods(list, title){
+  document.getElementById('food-section-title').textContent = title || 'Popular Items 🔥';
+  const grid = document.getElementById('food-grid');
+  if(!list.length){
+    grid.innerHTML = '<div class="no-results"><div>😕</div><p>No food found. Try another search!</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(f=>`
+    <div class="food-card">
+      <div class="food-img">
+        ${f.badge?`<div class="food-badge-tag">${f.badge}</div>`:''}
+        <span>${f.emoji}</span>
+      </div>
+      <div class="food-info">
+        <div class="food-name">${f.name}</div>
+        <div class="food-desc">${f.desc}</div>
+        <div class="food-bottom">
+          <div class="food-price">RM ${f.price}</div>
+          <div class="food-rating">⭐ ${f.rating}</div>
+        </div>
+        <button class="btn-add" onclick="addToCart(${f.id})">+ Add to Cart</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCat(el, cat){
+  document.querySelectorAll('.cat').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  currentCat = cat;
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').classList.remove('show');
+  const filtered = cat==='all' ? currentFoods : currentFoods.filter(f=>f.cat===cat);
+  renderFoods(filtered, cat==='all' ? 'Menu 🍽️' : `${cat.charAt(0).toUpperCase()+cat.slice(1)} Items`);
+}
+
+// ===== CART =====
+function addToCart(id){
+  const food = currentFoods.find(f=>f.id===id);
+  if(!food) return;
+  cart[id] = cart[id] || {food, qty:0};
+  cart[id].qty++;
+  updateCartCount();
+  showToast(`${food.emoji} ${food.name} added!`);
+}
+
+function updateCartCount(){
+  document.getElementById('cart-count').textContent = Object.values(cart).reduce((s,i)=>s+i.qty,0);
+}
+
+function renderCart(){
+  const items = Object.values(cart).filter(i=>i.qty>0);
+  const container = document.getElementById('cart-items');
+  if(!items.length){
+    container.innerHTML = `<div class="empty-cart"><div>🛒</div><h3>Cart is empty</h3><p>Go back and add some food!</p></div>`;
+    document.getElementById('order-summary').innerHTML = '';
+    return;
+  }
+  container.innerHTML = items.map(i=>`
+    <div class="cart-item">
+      <div class="cart-item-emoji">${i.food.emoji}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${i.food.name}</div>
+        <div class="cart-item-price">RM ${(i.food.price*i.qty).toFixed(2)}</div>
+      </div>
+      <div class="qty-controls">
+        <button class="qty-btn" onclick="changeQty(${i.food.id},-1)">−</button>
+        <div class="qty-num">${i.qty}</div>
+        <button class="qty-btn" onclick="changeQty(${i.food.id},1)">+</button>
+      </div>
+    </div>
+  `).join('');
+  const subtotal = items.reduce((s,i)=>s+i.food.price*i.qty,0);
+  const delivery = 3;
+  const discount = promoApplied ? Math.floor(subtotal*0.5) : 0;
+  const total = subtotal + delivery - discount;
+  document.getElementById('order-summary').innerHTML = `
+    <div class="summary-row"><span>Subtotal</span><span>RM ${subtotal.toFixed(2)}</span></div>
+    <div class="summary-row"><span>Delivery Fee</span><span>RM ${delivery.toFixed(2)}</span></div>
+    <div class="summary-row"><span>Promo Discount</span><span style="color:var(--green)">- RM ${discount.toFixed(2)} ${promoApplied?'✅':''}</span></div>
+    <div class="summary-row total"><span>Total</span><span style="color:var(--green)">RM ${total.toFixed(2)}</span></div>
+  `;
+}
+
+function changeQty(id, delta){
+  if(!cart[id]) return;
+  cart[id].qty = Math.max(0, cart[id].qty+delta);
+  if(cart[id].qty===0) delete cart[id];
+  updateCartCount();
+  renderCart();
+}
+
+function selectPayment(el){
+  document.querySelectorAll('.payment-method').forEach(m=>m.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function placeOrder(){
+  if(!Object.values(cart).filter(i=>i.qty>0).length){ showToast('Add food first!'); return; }
+  cart = {}; promoApplied = false; updateCartCount();
+  showPage('delivery-page');
+  document.getElementById('step3').classList.remove('done');
+  document.getElementById('step4').classList.remove('done');
+  setTimeout(()=>document.getElementById('step3').classList.add('done'),1500);
+  setTimeout(()=>document.getElementById('step4').classList.add('done'),3000);
+}
+
+function backHome(){
+  showPage('restaurants-page');
+  renderRestaurants(restaurants);
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='cart-page') renderCart();
+}
+
+function showInfoModal(type){
+  const map={delivery:'modal-delivery',foods:'modal-foods',payment:'modal-payment',promo:'modal-promo'};
+  document.getElementById(map[type]).classList.add('active');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+
+function applyPromo(){ promoApplied=true; showToast('Promo FOODDASH50 applied! 50% off 🎉'); }
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent='✅ '+msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// Init
+renderRestaurants(restaurants);
+</script>
+</body>
+</html>
